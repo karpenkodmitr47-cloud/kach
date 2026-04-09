@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: var(--tg-theme-bg-color); color: var(--tg-theme-text-color); padding: 20px; }
+        input { width: 100%; margin: 10px 0; padding: 10px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #248bcf; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>💪 Калькулятор КБЖУ</h2>
+    <input type="number" id="weight" placeholder="Вес (кг)">
+    <input type="number" id="height" placeholder="Рост (см)">
+    <input type="number" id="age" placeholder="Возраст">
+    <button id="calc">Рассчитать и отправить</button>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // Развернуть на весь экран
+
+        document.getElementById('calc').onclick = function() {
+            let w = document.getElementById('weight').value;
+            let h = document.getElementById('height').value;
+            let a = document.getElementById('age').value;
+
+            if(!w  !h  !a) return alert("Заполни все поля!");
+
+            // Отправляем данные обратно боту
+            let data = { weight: w, height: h, age: a };
+            tg.sendData(JSON.stringify(data));
+            tg.close();
+        };
+    </script>
+</body>
+</html>
