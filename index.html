@@ -5,64 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { 
-            font-family: sans-serif; background: var(--tg-theme-bg-color, #fff); 
-            color: var(--tg-theme-text-color, #000); padding: 20px; display: flex; flex-direction: column;
-        }
+        body { font-family: sans-serif; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); padding: 20px; }
         .card { background: var(--tg-theme-secondary-bg-color, #f5f5f5); padding: 15px; border-radius: 12px; }
-        input, select { width: 100%; margin: 8px 0; padding: 12px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #31b545; color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        input, select { width: 100%; margin: 8px 0; padding: 12px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; background: #31b545; color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; font-size: 16px; cursor: pointer; }
         #result { display: none; margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 10px; color: #2e7d32; text-align: center; }
     </style>
 </head>
 <body>
     <div class="card" id="main-form">
         <h2 style="text-align:center;">📊 Калькулятор КБЖУ</h2>
+        <label>Ваш пол:</label>
         <select id="gender">
             <option value="male">Мужчина</option>
             <option value="female">Женщина</option>
         </select>
-        <input type="number" id="weight" placeholder="Вес (кг)">
-        <input type="number" id="height" placeholder="Рост (см)">
-        <input type="number" id="age" placeholder="Возраст">
-        <button id="calc_btn">Рассчитать</button>
+        <input type="number" id="weight" placeholder="Вес (кг)" inputmode="decimal">
+        <input type="number" id="height" placeholder="Рост (см)" inputmode="decimal">
+        <input type="number" id="age" placeholder="Возраст" inputmode="numeric">
+        <button id="calc_btn">РАССЧИТАТЬ</button>
     </div>
 
     <div id="result"></div>
 
     <script>
-        let tg = window.Telegram.WebApp;
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready();
         tg.expand();
 
-        document.getElementById('calc_btn').onclick = function() {
-            let w = parseFloat(document.getElementById('weight').value);
-            let h = parseFloat(document.getElementById('height').value);
-            let a = parseInt(document.getElementById('age').value);
-            let g = document.getElementById('gender').value;
+        // Ждем полной загрузки DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('calc_btn');
+            
+            btn.onclick = function() {
+                try {
+                    const w = parseFloat(document.getElementById('weight').value);
+                    const h = parseFloat(document.getElementById('height').value);
+                    const a = parseInt(document.getElementById('age').value);
+                    const g = document.getElementById('gender').value;
 
-            if(!w  !h  !a) return alert("Заполни все поля!");
+                    if (isNaN(w)  isNaN(h)  isNaN(a)) {
+                        alert("Пожалуйста, введите корректные числа во все поля");
+                        return;
+                    }
 
-            // Расчет
-            let bmr = (g === 'male') ? (10 * w + 6.25 * h - 5 * a + 5) : (10 * w + 6.25 * h - 5 * a - 161);
-            let cals = Math.round(bmr * 1.375);
+                    // Формула Миффлина-Сан Жеора
+                    let bmr = (g === 'male') 
+                        ? (10 * w + 6.25 * h - 5 * a + 5) 
+                        : (10 * w + 6.25 * h - 5 * a - 161);
+                    
+                    const calories = Math.round(bmr * 1.375);
+                    const protein = Math.round(w * 2);
+                    const fats = Math.round(w * 0.8);
 
-            // 1. Показываем результат в самом приложении (для групп)
-            document.getElementById('main-form').style.display = 'none';
-            let resDiv = document.getElementById('result');
-            resDiv.style.display = 'block';
-            resDiv.innerHTML = `
-                <h3>Твоя норма: ${cals} ккал</h3>
-                <p>Белки: ${Math.round(w*2)}г | Жиры: ${Math.round(w*0.8)}г</p>
-                <button onclick="tg.close()" style="background:#248bcf">Готово</button>
-            `;
+                    // Скрываем форму и показываем результат
+                    document.getElementById('main-form').style.display = 'none';
+                    const resDiv = document.getElementById('result');
+                    resDiv.style.display = 'block';
+                    resDiv.innerHTML = `
+                        <h3>Твоя норма: ${calories} ккал</h3>
+                        <p>🥩 Белки: ${protein}г<br>🧀 Жиры: ${fats}г</p>
+                        <button id="close_btn" style="background:#248bcf">ПОНЯТНО, В ЗАЛ!</button>
+                    `;
 
-            // 2. Пробуем отправить данные боту (сработает только в личке)
-            try {
-                tg.sendData(JSON.stringify({calories: cals, protein: Math.round(w*2)}));
-            } catch(e) {
-                console.log("SendData не поддерживается в группах");
-            }
-        };
+                    document.getElementById('close_btn').onclick = () => tg.close();
+
+                    // Попытка отправить данные боту (сработает только в ЛС)
+                    tg.sendData(JSON.stringify({calories: calories, protein: protein}));
+                    
+                } catch (error) {
+                    alert("Ошибка при расчете: " + error.message);
+                }
+            };
+        });
     </script>
 </body>
 </html>
